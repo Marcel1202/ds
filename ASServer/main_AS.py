@@ -1,5 +1,6 @@
 import socket 
-from threading import Thread 
+from threading import Thread
+from common.discovery import DiscoveryServerThread
 
 # Multithreaded Python server : TCP Server Socket Thread Pool
 class DS_conn(Thread): 
@@ -16,7 +17,12 @@ class DS_conn(Thread):
             MESSAGE = input("Multithreaded Python server : Enter Response from Server/Enter exit:")
             if MESSAGE == 'exit':
                 break
-            conn.send(MESSAGE)  # echo 
+            conn.send(MESSAGE)  # echo
+
+
+# Start discovery thread
+discovery = DiscoveryServerThread("", 27464)
+discovery.start()
 
 # Multithreaded Python server : TCP Server Socket Program Stub
 TCP_IP = '0.0.0.0' 
