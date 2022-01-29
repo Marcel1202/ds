@@ -1,14 +1,19 @@
 # this file for the states of the automated bartender machine and to show the functionality of it 
 
 from atexit import register
-import Face_dedection as FD
 import datetime
 import keyboard
+import Unicast_FRS as unicast_FRS
 
 
-Fr=FD.FaceDedection()
+ip="0.0.0.0" # First Ip we get from broadcast
+FRS_port=27525 #First port we get from broadcast
 
-# each .run runs the state or the device fully 
+
+
+buffer_size=1024
+
+
 
 class SPEAKER: # these are devices (actuators and sensors that are used) #actuator
     def run(self,name,drink):
@@ -133,7 +138,7 @@ class Unicast_FRS: #state
         print('')
         print("Trying to contact an FRS server")
         print('')
-        status=unicast_FRS(photo_path)
+        status=unicast_FRS.send_image(ip,FRS_port,buffer_size,photo_path)
         return status
 
 class Unicast_AS: #state

@@ -1,27 +1,40 @@
 import socket 
 from threading import Thread 
+import DS_FRS_UNICAST_SERVER as DS_FRS
+import Face_encoder as Fe
 
 # Multithreaded Python server : TCP Server Socket Thread Pool
 class DS_conn(Thread): 
-    def __init__(self,ip,port): 
+    def __init__(self,ip,port,conn,BUFFER_SIZE): 
         Thread.__init__(self) 
         self.ip = ip 
         self.port = port 
+        self.conn=conn
+        self.BUFFER_SIZE=BUFFER_SIZE
+        self.FE=Fe()
         print(f"[+] New server socket thread started for {ip} :{str(port)}") 
  
-    def run(self): 
-        while True : 
-            data = conn.recv(2048) 
-            print("Server received data:", data)
-            MESSAGE = input("Multithreaded Python server : Enter Response from Server/Enter exit:")
-            if MESSAGE == 'exit':
-                break
-            conn.send(MESSAGE)  # echo 
+    def run(self):
+        DSM=DS_FRS(self.BUFFER_SIZE)
+        flag1=DSM.main(self.conn,self.ip,self.port)
+        if flag1=='Image received':
+            self.encoded_image=self.FE.encode_face('temp.png')
+        else:
+            pass
+        if self.encoded_image!=None:
+            pass
+            #Send image to UPS after contacting (Semd encodeded image and the ip of the DS machine)
+        else:
+            pass
+
+
+        
+         
 
 # Multithreaded Python server : TCP Server Socket Program Stub
 TCP_IP = '0.0.0.0' 
 TCP_PORT = 2004 
-BUFFER_SIZE = 1024  # Usually 1024, but we need quick response 
+BUFFER_SIZE = 1024
 
 tcpServer = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
 tcpServer.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) 
@@ -32,7 +45,7 @@ while True:
     tcpServer.listen(4) 
     print("Multithreaded Python server : Waiting for connections from TCP clients...") 
     (conn, (ip,port)) = tcpServer.accept() 
-    newthread = DS_conn(ip,port) 
+    newthread = DS_conn(ip,port,conn,BUFFER_SIZE) 
     newthread.start() 
     threads.append(newthread) 
  

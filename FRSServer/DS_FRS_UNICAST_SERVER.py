@@ -19,7 +19,7 @@ class DS_FRS_unicast_Server():
 
             elif txt.startwith("SIZE"):
                 image_size=txt.split()[1]
-                self.image_size=image_size
+                self.image_size=int(image_size)
             
             elif data:
                 image=open("temp.png",'wb')
@@ -31,12 +31,13 @@ class DS_FRS_unicast_Server():
                 local_image_size=os.path.getsize("temp.png")
                 if local_image_size==self.image_size:
                     conn.send("Image received! Contacting UPS!")
+                    conn.close()
                     break
                 else:
                     conn.send("Image corrupted! Send again!")
                     continue
 
-                        
+        return "Image received"               
 
 
 
