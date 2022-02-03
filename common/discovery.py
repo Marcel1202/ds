@@ -3,6 +3,7 @@ Discovery
 """
 import socket
 import threading
+from typing import Any, Tuple
 
 
 class DiscoveryServerThread(threading.Thread):
@@ -10,10 +11,11 @@ class DiscoveryServerThread(threading.Thread):
 	Listens for incoming discovery requests
 	"""
 
-	def __init__(self, host: str, port: int):
+	def __init__(self, host: str, port: int, tcp_port: int):
 		threading.Thread.__init__(self)
 		self.host = host
 		self.port = port
+		self.tcp_port = tcp_port
 		self.socket = None
 
 	def run(self) -> None:
@@ -27,7 +29,7 @@ class DiscoveryServerThread(threading.Thread):
 		while True:
 			data, address = self.socket.recvfrom(1024)
 			if data == b"discovery":
-				self.socket.sendto(b"discovery", address)
+				self.socket.sendto(bytes(str(self.tcp_port), 'utf-8'), address)
 
 
 class DiscoveryClient:
@@ -40,7 +42,7 @@ class DiscoveryClient:
 		self.port = port
 		self.socket = None
 
-	def discover(self) -> tuple[str, int]:
+	def discover(self) -> tuple[Any, int]:
 		"""
 		Run thread
 		"""
@@ -56,4 +58,4 @@ class DiscoveryClient:
 				break
 			except socket.timeout:
 				print("Timed out")
-		return address
+		return address[0], int(str(data, 'utf-8'))
