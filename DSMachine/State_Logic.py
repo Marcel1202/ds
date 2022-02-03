@@ -6,6 +6,7 @@ import keyboard
 import Unicast_FRS as unicast_FRS
 
 from common.discovery import DiscoveryClient
+import exceptions
 
 ip="0.0.0.0" # First Ip we get from broadcast
 FRS_port=27525 #First port we get from broadcast
@@ -263,16 +264,17 @@ class Automated_Bartender():
                     # rejects the user
                     Face_notRecogn.run()
 
+
 # Discover FRS and AS Server
-discovery = DiscoveryClient("", 27463)
-print("FRS IP:", discovery.discover())
+while True:
+    try:
+        discovery = DiscoveryClient("", 27463)
+        print("FRS IP:", discovery.discover())
 
-discovery = DiscoveryClient("", 27464)
-print("AS IP:", discovery.discover())
+        discovery = DiscoveryClient("", 27464)
+        print("AS IP:", discovery.discover())
 
-Automated_Bart=Automated_Bartender()
-Automated_Bart.normal_usage()
-
-
-
-
+        Automated_Bart = Automated_Bartender()
+        Automated_Bart.normal_usage()
+    except exceptions.ServerUnreachableException:
+        print("A server became unreachable. Restarting client")
