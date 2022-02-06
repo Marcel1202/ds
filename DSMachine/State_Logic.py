@@ -26,6 +26,7 @@ counter_AS=0
 repeat=None
 use_FRS=False
 use_AS=False
+
 FRS_ip=None
 AS_ip=None
 
@@ -171,11 +172,12 @@ class Unicast_AS: #state
 
 class Unicast_wait_UPS:
     def run(self):
+        pass
         print('')
         print("Waiting for UPS reply")
         print('')
-        user_name,drink=unicast_UPS()
-        return user_name, drink
+        #user_name,drink=unicast_UPS()
+        #return user_name, drink
 
 #initializing States
 Idle=Idle_Mode() 
