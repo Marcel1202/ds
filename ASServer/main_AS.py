@@ -9,12 +9,11 @@ UPS_IP=None
 
 # Multithreaded Python server : TCP Server Socket Thread Pool
 class DS_conn(Thread): 
-    def __init__(self,ip,port,conn): 
+    def __init__(self,ip,conn): 
         Thread.__init__(self) 
         self.ip = ip 
-        self.port = port 
         self.conn=conn
-        print(f"[+] New server socket thread started for {ip} :{str(port)}") 
+        print(f"[+] New server socket thread started for {ip}") 
  
     def run(self): 
         global task_list
@@ -44,8 +43,8 @@ discovery.start()
 while True: 
     tcpServer.listen(4) 
     print("Multithreaded Python server : Waiting for connections from TCP clients...") 
-    (conn, (ip,port)) = tcpServer.accept() 
-    newthread = DS_conn(ip,port) 
+    conn, ip = tcpServer.accept() 
+    newthread = DS_conn(ip,conn) 
     newthread.start() 
     threads.append(newthread) 
  

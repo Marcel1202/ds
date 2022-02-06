@@ -6,9 +6,7 @@ class DS_FRS_unicast_Server():
         self.buffer_size=buffer_size
         self.task_list=task_list
 
-    def main(self,conn,ip,port):
-        self.ip=ip
-        self.port=port
+    def main(self,conn):
 
         while(True):
             data=conn.recv(self.buffer_size)

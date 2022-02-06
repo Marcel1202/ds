@@ -10,19 +10,18 @@ task_list=[]
 UPS_IP=None
 
 class DS_conn(Thread):
-    def __init__(self,ip,port,conn,BUFFER_SIZE):
+    def __init__(self,ip,conn,BUFFER_SIZE):
         Thread.__init__(self)
         self.ip = ip
-        self.port = port
         self.conn=conn
         self.BUFFER_SIZE=BUFFER_SIZE
         self.FE=Fe()
-        print(f"[+] New server socket thread started for {ip} :{str(port)}")
+        print(f"[+] New server socket thread started for {ip}")
 
     def run(self):
         global task_list
         DSM=DS_FRS(self.BUFFER_SIZE,task_list)
-        flag1,task_list,JOB_ID=DSM.main(self.conn,self.ip,self.port)
+        flag1,task_list,JOB_ID=DSM.main(self.conn,self.ip)
         if flag1=='Image received':
             self.encoded_image=self.FE.encode_face(f'temp_{JOB_ID}.png')
         else:
@@ -51,8 +50,8 @@ discovery.start()
 while True: 
     tcpServer.listen(4) 
     print("Multithreaded Python server : Waiting for connections from TCP clients...") 
-    (conn, (ip,port)) = tcpServer.accept() 
-    newthread = DS_conn(ip,port,conn,BUFFER_SIZE) 
+    conn, ip = tcpServer.accept() 
+    newthread = DS_conn(ip,conn,BUFFER_SIZE) 
     newthread.start() 
     threads.append(newthread) 
  
