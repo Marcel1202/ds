@@ -1,9 +1,10 @@
 import os
 
 class DS_FRS_unicast_Server():
-    def __init__(self,buffer_size):
+    def __init__(self,buffer_size,task_list):
         pass
         self.buffer_size=buffer_size
+        self.task_list=task_list
 
     def main(self,conn,ip,port):
         self.ip=ip
@@ -12,10 +13,17 @@ class DS_FRS_unicast_Server():
         while(True):
             data=conn.recv(self.buffer_size)
             print(f"Received: {data}")
-            txt=str(data)
+            txt=str(data).split
 
-            if txt=="Avaliable?":
-                conn.send("Yes!")
+
+            if txt[0]=="Avaliable?":
+                JOB_ID=txt[1]
+                if JOB_ID not in self.task_list:
+                    conn.send("Yes!")
+                else:
+                    conn.send("Already Here")
+                    conn.close()
+                    break
 
             elif txt.startwith("SIZE"):
                 image_size=txt.split()[1]
@@ -37,7 +45,7 @@ class DS_FRS_unicast_Server():
                     conn.send("Image corrupted! Send again!")
                     continue
 
-        return "Image received"               
+        return "Image received", self.task_list, JOB_ID              
 
 
 
