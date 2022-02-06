@@ -14,7 +14,7 @@ def send_image(ip,port,buffer_size,photo_path,DS_ID):
         txt=str(s.recv())
         if txt=="Yes!":
             image_size=os.path.getsize(photo_path)
-            s.send(str(image_size))
+            s.send(f"SIZE {image_size}")
             while(True):
                 image_file=open(photo_path,'rb')
                 image_file_bits=image_file.read(buffer_size)

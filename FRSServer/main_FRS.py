@@ -6,6 +6,8 @@ import Face_encoder as Fe
 # Multithreaded Python server : TCP Server Socket Thread Pool
 from common.discovery import DiscoveryServerThread
 
+task_list=[]
+UPS_IP=None
 
 class DS_conn(Thread):
     def __init__(self,ip,port,conn,BUFFER_SIZE):
@@ -18,10 +20,11 @@ class DS_conn(Thread):
         print(f"[+] New server socket thread started for {ip} :{str(port)}")
 
     def run(self):
-        DSM=DS_FRS(self.BUFFER_SIZE)
-        flag1=DSM.main(self.conn,self.ip,self.port)
+        global task_list
+        DSM=DS_FRS(self.BUFFER_SIZE,task_list)
+        flag1,task_list,JOB_ID=DSM.main(self.conn,self.ip,self.port)
         if flag1=='Image received':
-            self.encoded_image=self.FE.encode_face('temp.png')
+            self.encoded_image=self.FE.encode_face(f'temp_{JOB_ID}.png')
         else:
             pass
         if self.encoded_image!=None:

@@ -1,23 +1,31 @@
 import socket 
 from threading import Thread
 from common.discovery import DiscoveryServerThread
+import DS_AS_UNICAST_SERVER as DS_AS
+
+task_list=[[],[]]
+# task_list=[[Job ID's ],[[user,pass],...]]
+UPS_IP=None
 
 # Multithreaded Python server : TCP Server Socket Thread Pool
 class DS_conn(Thread): 
-    def __init__(self,ip,port): 
+    def __init__(self,ip,port,conn): 
         Thread.__init__(self) 
         self.ip = ip 
         self.port = port 
+        self.conn=conn
         print(f"[+] New server socket thread started for {ip} :{str(port)}") 
  
     def run(self): 
-        while True : 
-            data = conn.recv(2048) 
-            print("Server received data:", data)
-            MESSAGE = input("Multithreaded Python server : Enter Response from Server/Enter exit:")
-            if MESSAGE == 'exit':
-                break
-            conn.send(MESSAGE)  # echo
+        global task_list
+        DSM=DS_AS(task_list)
+        flag1,task_list,JOB_ID,username,password=DSM.main(self.conn,self.ip,self.port)
+        if flag1=="User Data received":
+            pass
+            #Here we talk to UPS 
+        else:
+            pass
+        
 
 # Multithreaded Python server : TCP Server Socket Program Stub
 TCP_IP = '0.0.0.0' 

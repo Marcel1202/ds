@@ -13,11 +13,12 @@ class DS_FRS_unicast_Server():
         while(True):
             data=conn.recv(self.buffer_size)
             print(f"Received: {data}")
-            txt=str(data).split
+            txt=str(data)
 
 
-            if txt[0]=="Avaliable?":
-                JOB_ID=txt[1]
+            if txt.startswith("Avaliable?"):
+
+                JOB_ID=txt.split()[1]
                 if JOB_ID not in self.task_list:
                     conn.send("Yes!")
                 else:
@@ -30,13 +31,13 @@ class DS_FRS_unicast_Server():
                 self.image_size=int(image_size)
             
             elif data:
-                image=open("temp.png",'wb')
+                image=open(f"temp_{JOB_ID}.png",'wb')
                 image_bits=conn.recv(self.buffer_size)
                 while(image_bits):
                     image.write(image_bits)
                     image_bits=conn.recv(self.buffer_size)
                 image.close()
-                local_image_size=os.path.getsize("temp.png")
+                local_image_size=os.path.getsize("temp_{JOB_ID}.png")
                 if local_image_size==self.image_size:
                     conn.send("Image received! Contacting UPS!")
                     conn.close()
@@ -44,6 +45,7 @@ class DS_FRS_unicast_Server():
                 else:
                     conn.send("Image corrupted! Send again!")
                     continue
+        self.task_list.append(JOB_ID)
 
         return "Image received", self.task_list, JOB_ID              
 
