@@ -5,7 +5,6 @@ import os
 import face_recognition as fr
 import torch
 import numpy as np
-from PESocket import Automated_Bartender_Socket
 
 
 class FileNotFoundErr(Exception):

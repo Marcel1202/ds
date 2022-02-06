@@ -28,7 +28,7 @@ class DS_conn(Thread):
 
 # Multithreaded Python server : TCP Server Socket Program Stub
 TCP_IP = '0.0.0.0' 
-TCP_PORT = 2003 
+TCP_PORT = 0
 BUFFER_SIZE = 1024  # Usually 1024, but we need quick response 
 
 tcpServer = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
