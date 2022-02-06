@@ -26,6 +26,11 @@ counter_AS=0
 repeat=None
 use_FRS=False
 use_AS=False
+FRS_ip=None
+AS_ip=None
+
+FRS_port=2004
+AS_port=2003
 
 
 class SPEAKER: # these are devices (actuators and sensors that are used) #actuator
@@ -241,6 +246,7 @@ class Automated_Bartender():
         global repeat
         global use_AS
         global use_FRS
+        global regis
         
         while True:
             motion=Idle.run()
@@ -278,10 +284,12 @@ class Automated_Bartender():
 while True:
     try:
         discovery = DiscoveryClient("", 27463)
-        print("FRS IP:", discovery.discover())
+        FRS_ip=discovery.discover()
+        print("FRS IP:", FRS_ip)
 
         discovery = DiscoveryClient("", 27464)
-        print("AS IP:", discovery.discover())
+        AS_ip=discovery.discover()
+        print("AS IP:", AS_ip)
 
         Automated_Bart = Automated_Bartender()
         Automated_Bart.normal_usage()
