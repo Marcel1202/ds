@@ -3,7 +3,11 @@
 from atexit import register
 import datetime
 import keyboard
+from DSMachine.exceptions import ASUnreachableException
 import Unicast_FRS as unicast_FRS
+import Unicast_AS as unicast_AS
+import Face_dedection as FD
+import random
 
 from common.discovery import DiscoveryClient
 import exceptions
@@ -15,6 +19,13 @@ FRS_port=27525 #First port we get from broadcast
 
 buffer_size=1024
 
+flag_image=False
+flag_user_passw=False
+counter_FRS=0
+counter_AS=0
+repeat=None
+use_FRS=False
+use_AS=False
 
 
 class SPEAKER: # these are devices (actuators and sensors that are used) #actuator
@@ -69,6 +80,7 @@ class MOTION_DEDECTOR: #sensor
 
 class Face_Searching: #state
     def run(self,photo_path=None):
+        global flag_image
         print('')
         print("State Searching Face")
         print('')
@@ -76,6 +88,7 @@ class Face_Searching: #state
             while True:
                 face_dedected,photo_path=Camera.run()
                 if face_dedected==1:
+                    flag_image=True
                     break
                 else:
                     continue
@@ -125,30 +138,30 @@ class Ask_conn_type:
         if repeat==None:
             print('Register -> r')
             print("Dedect face and give drink -> d")
-            print('Username and password -> u')
+            print('Username and password and give drink-> u')
             user_pref=input("Write desiered action and the enter: ")
             return user_pref
         elif repeat=="FRS":
             user_pref=input("FRS connection did not work after 2 tries. Do you want to try an AS connection? (Yes -> y, No-> n)")
             return user_pref
         elif repeat=="AS":
-            user_pref=input("AS connection did not work after 2 tries. Do you want to try an AS connection? (Yes -> y, No-> n)")
+            user_pref=input("AS connection did not work after 2 tries. Do you want to try an FRS connection? (Yes -> y, No-> n)")
             return user_pref
 
 class Unicast_FRS: #state
-    def run(self,photo_path):
+    def run(self,photo_path,DS_ID):
         print('')
         print("Trying to contact an FRS server")
         print('')
-        status=unicast_FRS.send_image(ip,FRS_port,buffer_size,photo_path)
+        status=unicast_FRS.send_image(FRS_ip,FRS_port,buffer_size,photo_path,DS_ID)
         return status
 
 class Unicast_AS: #state
-    def run(self,user,passw):
+    def run(self,user,passw,DS_ID):
         print('')
         print("Trying to contact an AS server")
         print('')
-        status=unicast_AS(user,passw)
+        status=unicast_AS.send_user_data(AS_ip,AS_port,buffer_size,[user,passw],DS_ID)
         return status
 
 class Unicast_wait_UPS:
@@ -181,28 +194,24 @@ Drink_Machine_Sensor=DRINK_MACHINE_TAKE_DRINK()
 
 class Automated_Bartender():
     def __init__(self):
+        self.unique_ID=f"DS_{random.randint(10,50)}"
         pass
 
     def face_dedect(self):
+        global flag_image
         #Next step here is that we use UNICAST to talk to the FRS server. 
-        photo_path=Face_Search.run(photo_path=None)
-        status=Unicast_Frs.run(photo_path)
+        if flag_image==True:
+            photo_path=Face_Search.run(photo_path=1)
+        else:
+            photo_path=Face_Search.run(photo_path=1)
+        status=Unicast_Frs.run(photo_path,self.unique_ID)
         while(True):
             if status==True:
                     #Here we wait and accept Unicast from one of the UPS servers 
                 [user_name,drink]=Unicast_wait_Ups.run()
                         #unicast_wait_UPS should contain in a list [person name, drink]
                 if user_name==None:
-                    continue
-                else:
                     break
-            else:
-                pass
-                user_name=None
-                drink=None
-                #Photo not sent correctly. Retry again 1 more time and next move to AS Server
-                #     
-                break
 
         return user_name,drink
 
@@ -210,7 +219,7 @@ class Automated_Bartender():
         user=input("Please input your userame: ")
         passw=input("Please input your password: ")
         while(True):
-            status=Unicast_As.run(user,passw)
+            status=Unicast_As.run(user,passw,self.unique_ID)
             if status==True:
                     #Here we wait and accept Unicast from one of the UPS servers 
                 [user_name,drink]=Unicast_wait_Ups.run()
@@ -229,28 +238,28 @@ class Automated_Bartender():
 
 
     def normal_usage(self): #Automated usage of the Automated Bartender under normal usage. 
+        global repeat
+        global use_AS
+        global use_FRS
+        
         while True:
             motion=Idle.run()
             if motion==0:
                 continue
             elif motion==1:
-                repeat=None
                 while(True):
-                    conn=conn_type.run(repeat)
-                    if conn=='d':
+                    if use_AS==False and use_FRS==False:
+                        conn=conn_type.run(repeat)
+                        if conn=='d':
+                            use_FRS=True
+                        elif conn=='u':
+                            use_AS=True
+                    if use_FRS==True:
                         [user_name,drink]=self.face_dedect()
-                        if user_name==None:
-                            repeat="FRS"
-                            continue
-                        else:
-                            break
-                    elif conn=='u':
+                        break
+                    elif use_AS==True:
                         [user_name,drink]=self.user_pass()
-                        if user_name==None:
-                            repeat="AS"
-                            continue
-                        else:
-                            break
+                        break
                     else:
                         print("Wrong input! Try again!")
     
@@ -276,5 +285,18 @@ while True:
 
         Automated_Bart = Automated_Bartender()
         Automated_Bart.normal_usage()
-    except exceptions.ServerUnreachableException:
-        print("A server became unreachable. Restarting client")
+    except exceptions.FRSUnreachableException:
+        print("A FRS has become unreachable. Broadcasting again")
+        counter_FRS+=1
+        if counter_FRS>2:
+            repeat="FRS"
+            use_FRS=False
+    except exceptions.ASUnreachableException:
+        print("A AS has become unreachable. Broadcasting again")
+        counter_AS+=1
+        if counter_FRS>2:
+            repeat="AS"
+            use_AS=False
+
+    except exceptions.UPSTimeOut:
+        print("UPS Server is taking too long to reply! Contacting again")
