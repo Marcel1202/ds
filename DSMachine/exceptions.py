@@ -15,3 +15,6 @@ class ASUnreachableException(Exception):
 
 class UPSTimeOut(Exception):
 	pass
+
+class UPS_Timeout(Exception):
+	pass

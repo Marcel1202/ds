@@ -8,6 +8,7 @@ import Unicast_FRS as unicast_FRS
 import Unicast_AS as unicast_AS
 import Face_dedection as FD
 import random
+import Unicast_UPS
 
 from common.discovery import DiscoveryClient
 import exceptions
@@ -176,8 +177,8 @@ class Unicast_wait_UPS:
         print('')
         print("Waiting for UPS reply")
         print('')
-        #user_name,drink=unicast_UPS()
-        #return user_name, drink
+        user_name,drink=unicast_UPS.wait(wait_port,wait_ip)
+        return user_name, drink
 
 #initializing States
 Idle=Idle_Mode() 
@@ -188,6 +189,7 @@ Unicast_Frs=Unicast_FRS()
 Unicast_As=Unicast_AS()
 Unicast_wait_Ups=Unicast_wait_UPS()
 conn_type=Ask_conn_type()
+unicast_UPS=Unicast_UPS()
 
 #initializing devices
 Led=LED()
@@ -211,16 +213,21 @@ class Automated_Bartender():
             photo_path=Face_Search.run(photo_path=1)
         else:
             photo_path=Face_Search.run(photo_path=1)
-        status=Unicast_Frs.run(photo_path,self.unique_ID)
         while(True):
+            status=Unicast_Frs.run(photo_path,self.unique_ID)
             if status==True:
                     #Here we wait and accept Unicast from one of the UPS servers 
-                [user_name,drink]=Unicast_wait_Ups.run()
-                        #unicast_wait_UPS should contain in a list [person name, drink]
-                if user_name==None:
+                try:
+                    ret=Unicast_wait_Ups.run()
                     break
-
-        return user_name,drink
+                except exceptions.UPS_Timeout:
+                    continue
+                        #send id to FRS to clear the job at FRS
+                        #unicast_wait_UPS should contain in a list [person name, drink]
+        if ret==0:
+            return 0,None
+        else:
+            return ret[0],ret[1]
 
     def user_pass(self):
         user=input("Please input your userame: ")
@@ -229,19 +236,17 @@ class Automated_Bartender():
             status=Unicast_As.run(user,passw,self.unique_ID)
             if status==True:
                     #Here we wait and accept Unicast from one of the UPS servers 
-                [user_name,drink]=Unicast_wait_Ups.run()
-                        #unicast_wait_UPS should contain in a list [person name, drink]
-                if user_name==None:
-                    continue
-                else:
+                try:
+                    ret=Unicast_wait_Ups.run()
                     break
-            else:
-                pass
-                user_name=None
-                drink=None
-                break
-        
-        return user_name,drink
+                except exceptions.UPS_Timeout:
+                    continue
+                        #send id to FRS to clear the job at FRS
+                        #unicast_wait_UPS should contain in a list [person name, drink]
+        if ret==0:
+            return 0,None
+        else:
+            return ret[0],ret[1]
 
 
     def normal_usage(self): #Automated usage of the Automated Bartender under normal usage. 
