@@ -5,6 +5,8 @@ import socket
 import threading
 from typing import Any, Tuple
 
+from UPS.election import ElectionThread
+
 
 class DiscoveryServerThread(threading.Thread):
 	"""
@@ -84,7 +86,7 @@ class UPSDiscoveryServerThread(threading.Thread):
 		self.socket.bind((self.host, self.port))
 		while True:
 			data, address = self.socket.recvfrom(1024)
-			if data == b"discovery":
+			if data == b"discovery" and ElectionThread.leader_port == self.port:
 				self.network.append(address)
 				self.socket.sendto(bytes(str(self.tcp_port), 'utf-8'), address)
 

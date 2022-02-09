@@ -4,114 +4,116 @@ Discovery
 import socket
 import threading
 import time
-from typing import Any
 
 
-class ElectionThread2(threading.Thread):
-	def __init__(self, operation: str, reqtype: str = None):
+class ElectionThread(threading.Thread):
+	"""
+	Election Thread
+	"""
+
+	def __init__(self, operation: str, message: str = None):
 		threading.Thread.__init__(self)
 		self.operation = operation
-		self.reqtype = reqtype
+		self.message = message
 
 	def run(self) -> None:
+		"""
+		Run
+		"""
 		if self.operation == "timer":
 			time.sleep(7)
-			if not ElectionThread2.received:
-				ElectionThread2.leader_id = ElectionThread2.self_id
-				ElectionThread2.election = False
-				ElectionThread2.leader_flag = True
-				print("******I am the selected LEADER ! ", ElectionThread2.leader_id)
-				ElectionThread2("sender", "coordinator").start()
-			if ElectionThread2.received and not ElectionThread2.leader_flag:
-				ElectionThread2.election = False
-				ElectionThread2.received = False
-				print("Received OK but LEADER HAS FAILED");
-				ElectionThread2("sender", "election").start()
-		elif self.operation == "timerok":
-			while True:
-				if not ElectionThread2.leader_flag and time.time() > (5000 + (5000 * (4570 - ElectionThread2.self_id))):
-					ElectionThread2.ok_ctr = 0
-					print("Higher Process Sent OK but Failed, so Start a new Election process")
-					ElectionThread2("sender", "election").start()
-					break
+			if not ElectionThread.received:
+				ElectionThread.election = False
+				ElectionThread.has_leader = True
+				ElectionThread.leader_IP = ElectionThread.IP
+				ElectionThread.leader_port = ElectionThread.port
+				ElectionThread("sender", "coordinator").start()
+			if ElectionThread.received and not ElectionThread.has_leader:
+				ElectionThread.election = False
+				ElectionThread.received = False
+				ElectionThread("sender", "election").start()
 		elif self.operation == "receiver":
 			recvsocket = socket.socket()
-			recvsocket.bind(("0.0.0.0", ElectionThread2.self_id))
+			recvsocket.bind(("0.0.0.0", ElectionThread.port))
 			while True:
 				recvsocket.listen()
-				recvsocket2 = recvsocket.accept()[0]
-				print("Connection established.....")
-				option, source = tuple(recvsocket2.recv(1024).decode("UTF-8").split(","))
-				if option == "election":
-					print("received election request")
-					ElectionThread2.source_address = int(source)
-					if ElectionThread2.self_id > ElectionThread2.source_address:
-						ElectionThread2("sender", "ok").start()
-					if not ElectionThread2.election:
-						ElectionThread2("sender", "election").start()
-						ElectionThread2.election = True
-						ElectionThread2("timer").start()
-				elif option == "ok":
-					print("received ok")
-					ElectionThread2.received = True
-				elif option == "coordinator":
-					print("received coordinator request")
-					ElectionThread2.leader_id = int(source)
-					ElectionThread2.leader_flag = True
-					ElectionThread2.election_req = False
-					ElectionThread2.received = False
-					print("******LEADER selected is", ElectionThread2.leader_id)
-			recvsocket.close()
+				recvsocket2, source_address = recvsocket.accept()
+				message, sender_port = tuple(recvsocket2.recv(1024).decode("UTF-8").split(","))
+				if message == "election":
+					ElectionThread.election_source_IP = source_address[0]
+					ElectionThread.election_source_port = int(sender_port)
+					if ElectionThread.port > ElectionThread.election_source_port:
+						ElectionThread("sender", "ok").start()
+					if not ElectionThread.election:
+						ElectionThread("sender", "election").start()
+						ElectionThread.election = True
+						ElectionThread("timer").start()
+				elif message == "ok":
+					ElectionThread.received = True
+				elif message == "coordinator":
+					ElectionThread.election = False
+					ElectionThread.has_leader = True
+					ElectionThread.leader_IP = source_address[0]
+					ElectionThread.leader_port = int(sender_port)
+					ElectionThread.received = False
 
 		elif self.operation == "sender":
-			if self.reqtype == "election":
-				ElectionThread2.sendElectionRequest()
-			elif self.reqtype == "ok":
-				ElectionThread2.sendOK()
-			elif self.reqtype == "coordinator":
-				ElectionThread2.sendCoordinatorMsg()
+			if self.message == "election":
+				ElectionThread.send_election()
+			elif self.message == "ok":
+				ElectionThread.send_ok()
+			elif self.message == "coordinator":
+				ElectionThread.send_coordinator()
 
-	def sendCoordinatorMsg():
-		for address in ElectionThread2.network:
-			if address[1] != ElectionThread2.self_id:
-				try:
-					scmsocket = socket.socket()
-					scmsocket.connect(address)
-					scmsocket.send(("coordinator," + str(ElectionThread2.self_id)).encode("UTF-8"))
-					print("Sent Leader ID to :", address)
-				except:
-					print("The process ", address, " has failed, won't get the new leader !")
+	# noinspection PyMethodParameters
+	def send_election():
+		ElectionThread.higher = 0
+		for address in ElectionThread.network:
+			if address[1] > ElectionThread.port:
+				ElectionThread.higher += 1
 
-	def sendOK():
-		try:
-			sosocket = socket.socket()
-			sosocket.connect(("127.0.0.1", ElectionThread2.source_address))
-			sosocket.send(("ok," + str(ElectionThread2.self_id)).encode("UTF-8"))
-			print("Sent OK to : ", ElectionThread2.source_address)
-		except:
-			print("Process ", ElectionThread2.source_address, " has FAILED. OK Message cannot be sent !")
-
-	def sendElectionRequest():
 		fails = 0
-		for address in ElectionThread2.network:
-			if address[1] > ElectionThread2.self_id:
+		for address in ElectionThread.network:
+			if address[1] > ElectionThread.port:
 				try:
 					sersocket = socket.socket()
 					sersocket.connect(address)
-					sersocket.send(("election," + str(ElectionThread2.self_id)).encode("UTF-8"))
-					print("Sent Election Request to : " + address)
+					sersocket.send(("election," + str(ElectionThread.port)).encode("UTF-8"))
 				except:
-					print("The process :", address, " has FAILED, cannot send Election Request !")
 					fails += 1
-		if fails == ElectionThread2.higher:
-			if not ElectionThread2.election:
-				print("Inside if of sendElectionRequest")
-				ElectionThread2.election = True
-				ElectionThread2.received = False
-				ElectionThread2("timer").start()
+		if fails == ElectionThread.higher:
+			if not ElectionThread.election:
+				ElectionThread.election = True
+				ElectionThread.received = False
+				ElectionThread("timer").start()
+
+	# noinspection PyMethodParameters
+	def send_ok():
+		try:
+			sosocket = socket.socket()
+			sosocket.connect((ElectionThread.election_source_IP, ElectionThread.election_source_port))
+			sosocket.send(("ok," + str(ElectionThread.port)).encode("UTF-8"))
+		except:
+			pass
+
+	# noinspection PyMethodParameters
+	def send_coordinator():
+		for address in ElectionThread.network:
+			if address != (ElectionThread.IP, ElectionThread.port):
+				try:
+					scmsocket = socket.socket()
+					scmsocket.connect(address)
+					scmsocket.send(("ok," + str(ElectionThread.port)).encode("UTF-8"))
+				except:
+					pass
 
 
-ElectionThread2.leader_id = -1
-ElectionThread2.election = False
-ElectionThread2.leader_flag = False
-ElectionThread2.received = False
+ElectionThread.election = False
+ElectionThread.election_source_IP = None
+ElectionThread.election_source_port = None
+ElectionThread.IP = None
+ElectionThread.leader_flag = False
+ElectionThread.leader_port = -1
+ElectionThread.network = None
+ElectionThread.port = None
+ElectionThread.received = False
