@@ -1,12 +1,12 @@
 import time
 from threading import Thread
 import socket
-import Unicast.FRS_UPS 
+import Unicast.FRS_UPS
 import coordination as coord
 from UPS.election import ElectionThread2
 
 fake_network = [('127.0.0.1', 4560), ('127.0.0.1', 4561), ('127.0.0.1', 4562), ('127.0.0.1', 4563)]
-port = fake_network[1][1]
+port = fake_network[0][1]
 
 ElectionThread2.higher = 0
 for address in fake_network:
@@ -17,7 +17,8 @@ ElectionThread2.network = fake_network
 ElectionThread2.self_id = port
 ElectionThread2("receiver").start()
 
-time.sleep(0)
+# Send Election Request
+time.sleep(10)
 ElectionThread2("sender", "election").start()
 
 # discovery_client = UPSDiscoveryClient('0.0.0.0', 27466, port)
