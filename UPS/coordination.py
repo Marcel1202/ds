@@ -1,7 +1,6 @@
 
 
 import Unicast.UPS_Master_UPS_slave_slave as unicast_master_slave
-import Exceptions.exceptions
 
 UPS_ip='0.0.0.0'
 
